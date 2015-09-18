@@ -1,3 +1,5 @@
+#[L:Land/Army; W:Water/Fleet]\[Y/N: (Not) Supply Center]\[Three Letter Code]\[Comma-Delimited Adjacency]
+
 # ENGLAND
 L\N\WAL\LON,LVP,YOR
 W\N\WAL\IRI,ENG,LVP,LON

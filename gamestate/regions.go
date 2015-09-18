@@ -6,16 +6,19 @@ import (
 	"strings"
 )
 
-// RegionCodeList is the full list of possible region codes and their respective regions.
-var RegionIndex = make(map[string]*Region)
+// RegionIndex is the full list of possible region codes and their respective regions.
+var RegionIndex = make(map[RegionCode]*Region)
 
 // Region holds information on connectedness properties, and contained units.
 type Region struct {
-	RegionCode    string
-	IsSC          bool
-	LinkedWith    []string
-	AdjacentWater []string
-	AdjacentLand  []string
+	RegionID       RegionCode
+	IsSC           bool
+	LinkedWith     []RegionCode
+	AdjacentWater  []RegionCode
+	AdjacentLand   []RegionCode
+	OccupiedBy     UnitType
+	OccupiedNation NationCode
+	OwnedNation    NationCode
 }
 
 const mapLocation = "data/map.txt"
@@ -23,16 +26,17 @@ const mapLocation = "data/map.txt"
 var isMapInitialized = false
 
 // BuildMap Builds the map from file data
-func BuildMap() (out map[string]*Region) {
-	out = make(map[string]*Region)
+func BuildMap() (out map[RegionCode]*Region) {
+	out = make(map[RegionCode]*Region)
+	RegionIndex = make(map[RegionCode]*Region)
 	byteData, err := data.Asset(mapLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
-	linkedLocations := map[string][]string{
-		"STP": []string{"STP", "STPsc", "STPnc"},
-		"BUL": []string{"BUL", "BULsc", "BULnc"},
-		"SPN": []string{"SPN", "SPNsc", "SPNnc"},
+	linkedLocations := map[RegionCode][]RegionCode{
+		"STP": []RegionCode{"STP", "STPsc", "STPnc"},
+		"BUL": []RegionCode{"BUL", "BULsc", "BULnc"},
+		"SPN": []RegionCode{"SPN", "SPNsc", "SPNnc"},
 	}
 	s := string(byteData[:])
 	lines := strings.Split(s, "\n")
@@ -44,30 +48,30 @@ func BuildMap() (out map[string]*Region) {
 		}
 		token := strings.Split(line, "\\")
 		isWater := (token[0] == "W")
-		regCode := strings.TrimSpace(token[2])
+		regCode := RegionCode(strings.TrimSpace(token[2]))
 
 		reg := new(Region)
 		if ereg, ok := RegionIndex[regCode]; ok {
 			reg = ereg
 		} else {
 			reg.IsSC = (token[1] == "Y")
-			reg.RegionCode = regCode
+			reg.RegionID = regCode
 			if link, ok := linkedLocations[regCode[:3]]; ok {
 				reg.LinkedWith = link
 			}
 		}
 
 		for _, adj := range strings.Split(token[3], ",") {
-			adj = strings.TrimSpace(adj)
+			adjCode := RegionCode(strings.TrimSpace(adj))
 			if isWater {
-				reg.AdjacentWater = append(reg.AdjacentWater, adj)
+				reg.AdjacentWater = append(reg.AdjacentWater, adjCode)
 			} else {
-				reg.AdjacentLand = append(reg.AdjacentLand, adj)
+				reg.AdjacentLand = append(reg.AdjacentLand, adjCode)
 			}
 		}
 
-		RegionIndex[reg.RegionCode] = reg
-		out[reg.RegionCode] = reg
+		RegionIndex[reg.RegionID] = reg
+		out[reg.RegionID] = reg
 	}
 	return
 }

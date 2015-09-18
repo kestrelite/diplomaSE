@@ -1,0 +1,18 @@
+Order topology construction:
+
+Each order knows what other territories' resolutions depend on it. Therefore, construct a directed graph that is the inverse of the graph we want:
+
+A sup B to C
+C mov D
+D hold
+
+becomes
+A -> B, A -> C
+C -> D
+
+Then, invert the graph/traverse the graph backwards:
+
+B -> A, C -> A
+D -> C
+
+Therefore, DFS starts at a random (say, D), goes D -> C, C -> A; A must be the first order.
