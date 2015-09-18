@@ -18,7 +18,7 @@ type Region struct {
 	AdjacentLand  []string
 }
 
-const mapLocation = "data/testmap.txt"
+const mapLocation = "data/map.txt"
 
 var isMapInitialized = false
 
@@ -39,7 +39,10 @@ func BuildMap() (out map[string]*Region) {
 	lines = lines[:len(lines)-1]
 
 	for _, line := range lines {
-		token := strings.Split(line, "|")
+		if strings.HasPrefix(line, "#") || len(line) <= 1 {
+			continue
+		}
+		token := strings.Split(line, "\\")
 		isWater := (token[0] == "W")
 		regCode := strings.TrimSpace(token[2])
 
