@@ -21,9 +21,138 @@ func TestAddOrder(t *testing.T) {
 	}
 }
 
-func TestCleanOrders(t *testing.T) {
+var testOrderSetBuilt = false
+var testOrderSet *OrderSet
+
+func TestCleanInvalidOrders(t *testing.T) {
+	testSet := getTestOrderSet()
+	testSet.ValidateOrders()
+	out := testSet.CleanInvalidOrders()
+	for _, v := range out {
+		if len(v.orderComment) == 0 {
+			t.Error("Order comment missing for order", v.orderRegion.RegionID)
+		}
+	}
+}
+
+func TestValidateOrders(t *testing.T) {
+	testSet := getTestOrderSet()
+	testSet.ValidateOrders()
+
+	//If no order was given but a unit exists, add a hold order.
+	if _, ok := (*testSet)[RegionCode("PIC")]; !ok {
+		t.Error("An auto-hold was not assigned to Picardy")
+	}
+	if (*testSet)[RegionCode("PIC")].orderRegion.RegionID != "PIC" {
+		t.Error("Picardy's auto-hold was not assigned the correct region")
+	}
+
+	//If an order was given to a unit that doesn't exist, delete it.
+	if data, ok := (*testSet)[RegionCode("BEL")]; ok {
+		t.Error("Cleanup should have removed order on no unit: ", data.orderRegion)
+	}
+
+	//If a move order has an illegal destination, mark it invalid.
+	if !(*testSet)[RegionCode("NWY")].orderInvalid {
+		t.Error("A move from NWY -> NTH by Army was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("HOL")].orderInvalid {
+		t.Error("A move from HOL -> RUH by Fleet was not marked invalid")
+	}
+
+	//If a support order has an illegal destination, mark it invalid.
+	if !(*testSet)[RegionCode("SYR")].orderInvalid {
+		t.Error("The move SYR sup SMY -> CON was not marked invalid")
+	}
+
+	//If a support order supports a move order to hold, or vice versa, mark it invalid.
+	if !(*testSet)[RegionCode("POR")].orderInvalid {
+		t.Error("The move POR sup GOL -> SPNsc with GOL H was not marked invalid")
+	}
+
+	//If a support order has a source that doesn't match the destination, mark it invalid.
+	if !(*testSet)[RegionCode("MAO")].orderInvalid {
+		t.Error("The move MAO sup IRI -> NAT with IRI -> ENG was not marked invalid")
+	}
+
+	//If a support order supports a move order with a source with an illegal destination, mark it invalid.
+	if !(*testSet)[RegionCode("GAS")].orderInvalid {
+		t.Error("The move GAS sup BRE -> PAR with F BRE -> PAR was not marked invalid")
+	}
+
+	//Legal support - control test
+	if (*testSet)[RegionCode("WES")].orderInvalid {
+		t.Error("The move WES sup TUN -> NAF was marked invalid")
+	}
+
+	//If a convoy order moves a non-army unit, or a nonexistent unit, mark it invalid.
+	if !(*testSet)[RegionCode("AEG")].orderInvalid {
+		t.Error("The convoy of a nonexistent unit AEG C BUL -> GRE was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("TYN")].orderInvalid {
+		t.Error("The convoy for a fleet in ROM (ROM F) (TYN C ROM -> TUN) was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("ROM")].orderInvalid {
+		t.Error("The convoy of a fleet in ROM was not marked invalid")
+	}
+
+	//If a convoy order moves a unit that doesn't also have a convoy order, mark it invalid.
+	if !(*testSet)[RegionCode("BOT")].orderInvalid {
+		t.Error("The convoy of a holding army BOT C LVN -> SWE was not marked invalid")
+	}
+
+	//If a convoy move order is moving a unit to somewhere it can't be, mark it invalid.
+	if !(*testSet)[RegionCode("NRG")].orderInvalid {
+		t.Error("The convoy of an army into NAT (NRG C EDI -> NAT) was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("EDI")].orderInvalid {
+		t.Error("The convoy move of EDI -> NAT by NRG was not marked invalid")
+	}
+
+	//Stray convoy order invalidation
+	if !(*testSet)[RegionCode("HEL")].orderInvalid {
+		t.Error("The stray conovy HEL C DEN -> KIE was not marked invalid")
+	}
+
+	//Test a legal convoy chain
+	if (*testSet)[RegionCode("TRI")].orderInvalid {
+		t.Error("A legal convoy move order from TRI -> APU was marked invalid")
+	}
+	if (*testSet)[RegionCode("ADR")].orderInvalid {
+		t.Error("A legal convoy order ADR C TRI -> ION was marked invalid")
+	}
+	if (*testSet)[RegionCode("ION")].orderInvalid {
+		t.Error("A legal convoy order ION C ADR -> APU was marked invalid")
+	}
+
+	//Test an illegal convoy chain
+	if !(*testSet)[RegionCode("STP")].orderInvalid {
+		t.Error("A convoy out of STP that has no route was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("BAR")].orderInvalid {
+		t.Error("A convoy using BAR that has no route was not marked invalid")
+	}
+	if !(*testSet)[RegionCode("BAL")].orderInvalid {
+		t.Error("A convoy using BAL that has no route was not marked invalid")
+	}
+
+	//Legal convoy - control test
+	if (*testSet)[RegionCode("ANK")].orderInvalid {
+		t.Error("The convoyed move ANK -> SEV was marked invalid")
+	}
+	if (*testSet)[RegionCode("BLA")].orderInvalid {
+		t.Error("The convoy order BLA C ANK -> SEV was marked invalid")
+	}
+}
+
+func getTestOrderSet() (testSet *OrderSet) {
+	if testOrderSetBuilt {
+		testSet = testOrderSet
+		return
+	}
+
 	BuildMap()
-	testSet := NewOrderSet()
+	testSet = NewOrderSet()
 	var orderFrom, orderSup, orderTo RegionCode
 
 	//MOVE EXISTENCE VALIDATION
@@ -153,112 +282,5 @@ func TestCleanOrders(t *testing.T) {
 	orderFrom, orderSup, orderTo = RegionCode("BLA"), RegionCode("ANK"), RegionCode("SEV")
 	testSet.AddOrder(&orderFrom, &orderSup, &orderTo, OrderTypeConvoy)
 	testSet.AddOrder(&orderSup, nil, &orderTo, OrderTypeMoveConvoy)
-
-	//Cleanup orders for adjudication
-	testSet.ValidateOrders()
-
-	//If no order was given but a unit exists, add a hold order.
-	if _, ok := (*testSet)[RegionCode("PIC")]; !ok {
-		t.Error("An auto-hold was not assigned to Picardy")
-	}
-	if (*testSet)[RegionCode("PIC")].orderRegion.RegionID != "PIC" {
-		t.Error("Picardy's auto-hold was not assigned the correct region")
-	}
-
-	//If an order was given to a unit that doesn't exist, delete it.
-	if data, ok := (*testSet)[RegionCode("BEL")]; ok {
-		t.Error("Cleanup should have removed order on no unit: ", data.orderRegion)
-	}
-
-	//If a move order has an illegal destination, mark it invalid.
-	if !(*testSet)[RegionCode("NWY")].orderInvalid {
-		t.Error("A move from NWY -> NTH by Army was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("HOL")].orderInvalid {
-		t.Error("A move from HOL -> RUH by Fleet was not marked invalid")
-	}
-
-	//If a support order has an illegal destination, mark it invalid.
-	if !(*testSet)[RegionCode("SYR")].orderInvalid {
-		t.Error("The move SYR sup SMY -> CON was not marked invalid")
-	}
-
-	//If a support order supports a move order to hold, or vice versa, mark it invalid.
-	if !(*testSet)[RegionCode("POR")].orderInvalid {
-		t.Error("The move POR sup GOL -> SPNsc with GOL H was not marked invalid")
-	}
-
-	//If a support order has a source that doesn't match the destination, mark it invalid.
-	if !(*testSet)[RegionCode("MAO")].orderInvalid {
-		t.Error("The move MAO sup IRI -> NAT with IRI -> ENG was not marked invalid")
-	}
-
-	//If a support order supports a move order with a source with an illegal destination, mark it invalid.
-	if !(*testSet)[RegionCode("GAS")].orderInvalid {
-		t.Error("The move GAS sup BRE -> PAR with F BRE -> PAR was not marked invalid")
-	}
-
-	//Legal support - control test
-	if (*testSet)[RegionCode("WES")].orderInvalid {
-		t.Error("The move WES sup TUN -> NAF was marked invalid")
-	}
-
-	//If a convoy order moves a non-army unit, or a nonexistent unit, mark it invalid.
-	if !(*testSet)[RegionCode("AEG")].orderInvalid {
-		t.Error("The convoy of a nonexistent unit AEG C BUL -> GRE was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("TYN")].orderInvalid {
-		t.Error("The convoy for a fleet in ROM (ROM F) (TYN C ROM -> TUN) was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("ROM")].orderInvalid {
-		t.Error("The convoy of a fleet in ROM was not marked invalid")
-	}
-
-	//If a convoy order moves a unit that doesn't also have a convoy order, mark it invalid.
-	if !(*testSet)[RegionCode("BOT")].orderInvalid {
-		t.Error("The convoy of a holding army BOT C LVN -> SWE was not marked invalid")
-	}
-
-	//If a convoy move order is moving a unit to somewhere it can't be, mark it invalid.
-	if !(*testSet)[RegionCode("NRG")].orderInvalid {
-		t.Error("The convoy of an army into NAT (NRG C EDI -> NAT) was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("EDI")].orderInvalid {
-		t.Error("The convoy move of EDI -> NAT by NRG was not marked invalid")
-	}
-
-	//Stray convoy order invalidation
-	if !(*testSet)[RegionCode("HEL")].orderInvalid {
-		t.Error("The stray conovy HEL C DEN -> KIE was not marked invalid")
-	}
-
-	//Test a legal convoy chain
-	if (*testSet)[RegionCode("TRI")].orderInvalid {
-		t.Error("A legal convoy move order from TRI -> APU was marked invalid")
-	}
-	if (*testSet)[RegionCode("ADR")].orderInvalid {
-		t.Error("A legal convoy order ADR C TRI -> ION was marked invalid")
-	}
-	if (*testSet)[RegionCode("ION")].orderInvalid {
-		t.Error("A legal convoy order ION C ADR -> APU was marked invalid")
-	}
-
-	//Test an illegal convoy chain
-	if !(*testSet)[RegionCode("STP")].orderInvalid {
-		t.Error("A convoy out of STP that has no route was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("BAR")].orderInvalid {
-		t.Error("A convoy using BAR that has no route was not marked invalid")
-	}
-	if !(*testSet)[RegionCode("BAL")].orderInvalid {
-		t.Error("A convoy using BAL that has no route was not marked invalid")
-	}
-
-	//Legal convoy - control test
-	if (*testSet)[RegionCode("ANK")].orderInvalid {
-		t.Error("The convoyed move ANK -> SEV was marked invalid")
-	}
-	if (*testSet)[RegionCode("BLA")].orderInvalid {
-		t.Error("The convoy order BLA C ANK -> SEV was marked invalid")
-	}
+	return
 }
