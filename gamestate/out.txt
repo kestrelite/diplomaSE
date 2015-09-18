@@ -1,0 +1,20 @@
+L|Y|SPN|POR [76 124 89 124 83 80 78 124 80 79 82 13]
+B 3
+W|Y|SPNnc|POR [87 124 89 124 83 80 78 110 99 124 80 79 82 13]
+B 5
+A [80 79 82] 3
+W|Y|SPNsc|POR [87 124 89 124 83 80 78 115 99 124 80 79 82 13]
+B 5
+A [80 79 82] 3
+W|N|MAO|SPNnc [87 124 78 124 77 65 79 124 83 80 78 110 99 13]
+B 3
+A [83 80 78 110 99] 5
+L|Y|POR|SPN,SPNnc,SPNsc [76 124 89 124 80 79 82 124 83 80 78 44 83 80 78 110 99 44 83 80 78 115 99 13]
+B 3
+POR [80 79 82] &{POR true [] [] [SPN SPNnc SPNsc]}
+POR [80 79 82] &{POR true [] [] [SPN SPNnc SPNsc]}
+--- FAIL: TestBuildMap (0.00s)
+	regions_test.go:55: Inconsistent Map: MAO's adjacency SPNnc does not list MAO in kind.
+FAIL
+exit status 1
+FAIL	diplomaSE/gamestate	0.397s
