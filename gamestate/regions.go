@@ -25,6 +25,26 @@ const mapLocation = "data/map.txt"
 
 var isMapInitialized = false
 
+func regionCodeContained(r []RegionCode, rt RegionCode) bool {
+	for _, v := range r {
+		if v == rt {
+			return true
+		}
+	}
+	return false
+}
+
+// IsAdjacent indicates whether a given region is adjacent to another region
+func (r *Region) IsAdjacent(adj RegionCode, unit UnitType) bool {
+	if unit == UnitTypeArmy {
+		return regionCodeContained(r.AdjacentLand, adj)
+	}
+	if unit == UnitTypeFleet {
+		return regionCodeContained(r.AdjacentWater, adj)
+	}
+	panic("IsAdjacent passed a non-unit UnitType")
+}
+
 // BuildMap Builds the map from file data
 func BuildMap() (out map[RegionCode]*Region) {
 	out = make(map[RegionCode]*Region)
@@ -73,6 +93,7 @@ func BuildMap() (out map[RegionCode]*Region) {
 		RegionIndex[reg.RegionID] = reg
 		out[reg.RegionID] = reg
 	}
+	isMapInitialized = true
 	return
 }
 

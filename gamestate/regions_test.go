@@ -19,13 +19,25 @@ func joinRegionCode(r []RegionCode, del string) string {
 	return out
 }
 
-func regionCodeContained(r []RegionCode, rt RegionCode) bool {
-	for _, v := range r {
-		if v == rt {
-			return true
-		}
+func TestIsAdjacent(t *testing.T) {
+	if !RegionIndex[RegionCode("NWY")].IsAdjacent(RegionCode("SWE"), UnitTypeArmy) {
+		t.Error("Adjacency for NWY -> SWE by Army failed")
 	}
-	return false
+	if RegionIndex[RegionCode("NWY")].IsAdjacent(RegionCode("NTH"), UnitTypeArmy) {
+		t.Error("Adajcency for NWY -> NTH by Army succeeded")
+	}
+	if !RegionIndex[RegionCode("NTH")].IsAdjacent(RegionCode("NRG"), UnitTypeFleet) {
+		t.Error("Adjacency for NTH -> NRG by Fleet failed")
+	}
+	if RegionIndex[RegionCode("HOL")].IsAdjacent(RegionCode("RUH"), UnitTypeFleet) {
+		t.Error("Adjacency for HOL -> RUH by Fleet succeeded")
+	}
+	if RegionIndex[RegionCode("VIE")].IsAdjacent(RegionCode("SER"), UnitTypeArmy) {
+		t.Error("Adjacency for VIE -> SER by Army succeeded")
+	}
+	if RegionIndex[RegionCode("NTH")].IsAdjacent(RegionCode("IRI"), UnitTypeFleet) {
+		t.Error("Adjacency for NTH -> IRI by Fleet succeeded")
+	}
 }
 
 func TestBuildMap(t *testing.T) {

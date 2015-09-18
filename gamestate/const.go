@@ -19,11 +19,12 @@ const (
 	OrderTypeHold OrderType = iota
 	OrderTypeSupport
 	OrderTypeMove
+	OrderTypeMoveConvoy
 	OrderTypeConvoy
 )
 
 const (
-	UnitTypenone UnitType = iota
+	UnitTypeNone UnitType = iota
 	UnitTypeArmy
 	UnitTypeFleet
 )

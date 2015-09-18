@@ -16,3 +16,7 @@ B -> A, C -> A
 D -> C
 
 Therefore, DFS starts at a random (say, D), goes D -> C, C -> A; A must be the first order.
+
+TODO: Add lint-proof comments to everything
+
+Order class now populated
