@@ -9,13 +9,13 @@ type Order struct {
 	orderSup     *RegionCode
 	orderTo      *RegionCode
 	orderType    OrderType
-	depOrders    []Order
+	depOrders    []*Order
 	orderInvalid bool
 	orderComment string
 }
 
 func newHoldOrder(regID RegionCode) *Order {
-	return &Order{RegionIndex[regID], nil, nil, OrderTypeHold, *new([]Order), false, ""}
+	return &Order{RegionIndex[regID], nil, nil, OrderTypeHold, *new([]*Order), false, ""}
 }
 
 // NewOrderSet builds a new order set by iterating over the keys of the RegionIndex
