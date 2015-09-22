@@ -26,18 +26,24 @@ var testOrderSet *OrderSet
 
 func TestCleanInvalidOrders(t *testing.T) {
 	testSet := getTestOrderSet()
-	testSet.ValidateOrders()
-	out := testSet.CleanInvalidOrders()
+	testSet.validateOrders()
+	out := testSet.cleanupOrders()
 	for _, v := range out {
 		if len(v.orderComment) == 0 {
 			t.Error("Order comment missing for order", v.orderRegion.RegionID)
+		}
+	}
+
+	for k := range RegionIndex {
+		if _, ok := (*testSet)[k]; !ok {
+			t.Error("Order in region " + k + " was not set to UnitTypeNone OrderTypeHold.")
 		}
 	}
 }
 
 func TestValidateOrders(t *testing.T) {
 	testSet := getTestOrderSet()
-	testSet.ValidateOrders()
+	testSet.validateOrders()
 
 	//If no order was given but a unit exists, add a hold order.
 	if _, ok := (*testSet)[RegionCode("PIC")]; !ok {

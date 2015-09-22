@@ -44,7 +44,7 @@ func (o *OrderSet) AddOrder(regID, orderA, orderB *RegionCode, oType OrderType) 
 }
 
 // ValidateOrders removes all illegal orders
-func (o *OrderSet) ValidateOrders() {
+func (o *OrderSet) validateOrders() {
 	var convoyList, moveConvoyList []*Order
 
 	for k, v := range *o {
@@ -222,11 +222,17 @@ func (o *OrderSet) ValidateOrders() {
 
 // CleanInvalidOrders strips an OrderSet of its invalid orders, replacing them
 // with hold orders.
-func (o *OrderSet) CleanInvalidOrders() (mk []*Order) {
+func (o *OrderSet) cleanupOrders() (mk []*Order) {
 	for k, v := range *o {
 		if v.orderInvalid {
 			mk = append(mk, v)
 			(*o)[k] = newHoldOrder(v.orderRegion.RegionID)
+		}
+	}
+
+	for k := range RegionIndex {
+		if _, ok := (*o)[k]; !ok {
+			(*o)[k] = newHoldOrder(k)
 		}
 	}
 	return
