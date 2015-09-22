@@ -1,12 +1,12 @@
 # diplomaSE
-A Diplomacy web app and adjudicator written in Go
+A Diplomacy web app and adjudicator written in Go. It's free, I tell you, *free!*
 
 ## Who?
 
 This project grew out of a friendly/casual game of Diplomacy organized between
 a small group of users on the Stack Exchange chat network, when one player
 accidentally surrendered as a result of the silent failure of an AJAX request
-that should have sent his orders to the server. That conversation, in a
+that should have sent his orders to the server (and silently failed instead). That conversation, in a
 nutshell:
 
 > **A:** Maybe instead of playing the actual game, we should collaborate to build it
@@ -18,7 +18,7 @@ nutshell:
 
 > **E:** It'd be a shiny new way to try out Golang, too.
 
-*And thus, **diplomaSE** (working title) was born.*
+And thus, **diplomaSE** (working title) was born.
 
 ### Wait, so can I help?
 
@@ -32,7 +32,7 @@ playing Portal. Fnordle. (**A** was drinking when he wrote this section.)
 
 ## What?
 
-**DiplomaSE** is intended to grow into a full client for something. (**E** TODO)
+**DiplomaSE** is intended to grow into a full client for Diplomacy games. It is built with a custom DATC-compliant adjudicator written in Go, and will ideally have a newfangled, easier-to-read Diplomacy game navigation system. (Though it is not the same as [zond/godip](https://github.com/zond/godip), it relies on much of the same [math of adjudication](http://www.diplom.org/Zine/S2009M/Kruijswijk/DipMath_Chp1.htm).)
 
 ## When?
 
@@ -56,7 +56,6 @@ language.
 resolution.
 - Rock-hard abs.
 - [Making the world a better place.][3]
-- Etc.
 
 ## How?
 
