@@ -14,3 +14,38 @@ Then, invert the graph/traverse the graph backwards:
 
 B -> A, C -> A
 D -> C
+
+#TODO: Write setOrderDeps(); this function needs to populate the slice
+    (depOrders []*Order) in the Order object with orders that need to be
+    resolved before the current order can be resolved.
+
+#TODO: Write stripOrderCycles(); this function needs to search the directed
+    graph created by setOrderDeps() for cycles. Cycles need to be removed or
+    marked so they can be treated as a single order during order resolution. In
+    other words, this function takes the DG from setOrderDeps and turns it
+    into a DAG by removing detected cycles.
+
+    There are a couple useful properties when running this search: in particular,
+    no two orders can be dependent on any single order; consq., orders shouldn't
+    overlap at all and there should be no choices for this fn. to make.
+
+#TODO: Write assignStrengths(); this function needs to create the four unit
+    strengths: Attack, Defend, Prevent, HoldStrength. These each will have a
+    minimum and maximum value - it is *critical* that both a min and a max are
+    created and stored for order resolution. This is *not* a perfect information
+    resolution.
+
+#TODO: Write resolveOrderCycle(); this function takes an order cycle and resolves
+    it using an imperfect-information resolver and/or paradox resolver and/or
+    Szykman rule.
+
+#TODO: Write getResolvedMap(); this function takes all orders in an order set
+    and resolves them in the dependency order created by setOrderDeps
+    and stripOrderCycles. After this step, all orders should be resolved.
+
+#TODO: Write out stuff for web things (?)
+
+Small notes: 
+
+ - Whenever an order is rejected or set to any state other than 'succeeded',
+   the game engine should write a reason why into the orderComment field.
