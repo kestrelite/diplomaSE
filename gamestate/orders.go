@@ -1,5 +1,7 @@
 package gamestate
 
+import "diplomaSE/util"
+
 // OrderSet is a map[RegionCode]*Order that holds a map of orders by code
 type OrderSet map[RegionCode]*Order
 
@@ -45,6 +47,9 @@ func (o *OrderSet) AddOrder(regID, orderA, orderB *RegionCode, oType OrderType) 
 
 // ValidateOrders removes all illegal orders
 func (o *OrderSet) validateOrders() {
+	var tracer = util.GetNewTracer()
+	// tracer.Activate() // Comment to silence; uncomment to print to stdout
+
 	var convoyList, moveConvoyList []*Order
 
 	for k, v := range *o {
@@ -111,17 +116,17 @@ func (o *OrderSet) validateOrders() {
 	//to its land territory. If it does, mark all those convoy orders valid.
 	//If it doesn't, leave them marked invalid.
 	for _, army := range moveConvoyList {
-		//fmt.Println(army.orderRegion.RegionID, "moving to", *army.orderTo)
+		tracer.Println(army.orderRegion.RegionID, "moving to", *army.orderTo)
 		//If the army isn't moving into a land-based territory, stappit.
 		if len(RegionIndex[*army.orderTo].AdjacentLand) == 0 {
-			//fmt.Println("\t not moving into a land territory; aborting")
+			tracer.Println("\t not moving into a land territory; aborting")
 			army.orderComment = orderRejectConvoyMovingOntoWater
 			army.orderInvalid = true
 			continue
 		}
 		//If the army isn't actually an army, stappit.
 		if army.orderRegion.OccupiedBy != UnitTypeArmy {
-			//fmt.Println("\t this isn't actually an army; aborting")
+			tracer.Println("\t this isn't actually an army; aborting")
 			army.orderComment = orderRejectConvoyNotAnArmy
 			army.orderInvalid = true
 			continue
@@ -139,7 +144,7 @@ func (o *OrderSet) validateOrders() {
 		if len(possInitialConvoys) == 0 {
 			army.orderComment = orderRejectConvoyNoStartingPath
 			army.orderInvalid = true
-			//fmt.Println("\t welp, looks like there's no solution to this one")
+			tracer.Println("\t welp, looks like there's no solution to this one")
 			continue
 		}
 
@@ -149,7 +154,7 @@ func (o *OrderSet) validateOrders() {
 		// - If it's not, try to add another node to the chain
 		//   - If no new node could be added, exit without a path.
 		for _, startConvoy := range possInitialConvoys {
-			//fmt.Println("\tPossible initial convoy:", startConvoy.orderRegion.RegionID, "convoys", *startConvoy.orderSup, "to", *startConvoy.orderTo)
+			tracer.Println("\tPossible initial convoy:", startConvoy.orderRegion.RegionID, "convoys", *startConvoy.orderSup, "to", *startConvoy.orderTo)
 
 			var path []*Order
 			path = append(path, army, startConvoy)
@@ -159,20 +164,20 @@ func (o *OrderSet) validateOrders() {
 
 			for !pathFound {
 				currConvoy := path[len(path)-1]
-				//fmt.Println("\t\tFocusing on convoy:", currConvoy.orderRegion.RegionID, "convoys", *currConvoy.orderSup, "to", *currConvoy.orderTo)
+				tracer.Println("\t\tFocusing on convoy:", currConvoy.orderRegion.RegionID, "convoys", *currConvoy.orderSup, "to", *currConvoy.orderTo)
 				if *currConvoy.orderTo == *army.orderTo {
-					//fmt.Println("\t\t\tConvoy satisfies the convoy chain.")
+					tracer.Println("\t\t\tConvoy satisfies the convoy chain.")
 					pathFound = true
 					break
 				}
 				for _, nextConvoy := range convoyList {
-					//fmt.Println("\t\t\tTesting possible next convoy:", nextConvoy.orderRegion.RegionID, "convoys", *nextConvoy.orderSup, "to", *nextConvoy.orderTo)
+					tracer.Println("\t\t\tTesting possible next convoy:", nextConvoy.orderRegion.RegionID, "convoys", *nextConvoy.orderSup, "to", *nextConvoy.orderTo)
 					if nextConvoy.orderInvalid == false {
-						//fmt.Println("\t\t\t\t convoy not legal for use at this point")
+						tracer.Println("\t\t\t\t convoy not legal for use at this point")
 						continue //This is either already part of a valid chain, or part of our chain
 					}
 					if len(nextConvoy.orderRegion.AdjacentLand) != 0 {
-						//fmt.Println("\t\t\t\t ship is on water; order invalid")
+						tracer.Println("\t\t\t\t ship is on water; order invalid")
 						nextConvoy.orderComment = orderRejectConvoyUsingDockedShip
 						continue //You can't convoy with a docked ship
 					}
@@ -181,18 +186,18 @@ func (o *OrderSet) validateOrders() {
 						*nextConvoy.orderSup == currConvoy.orderRegion.RegionID &&
 						nextConvoy.orderRegion.IsAdjacent(*nextConvoy.orderSup, UnitTypeFleet) &&
 						nextConvoy.orderRegion.IsAdjacent(*nextConvoy.orderTo, UnitTypeFleet) {
-						//fmt.Println("\t\t\t\t hey, this one might work!")
+						tracer.Println("\t\t\t\t hey, this one might work!")
 						path = append(path, nextConvoy)
 						nextConvoy.orderInvalid = false
 						break
 					}
 
-					//fmt.Println("\t\t\t\t order does not connect to", *currConvoy.orderTo)
+					tracer.Println("\t\t\t\t order does not connect to", *currConvoy.orderTo)
 				}
 				passConvoy := path[len(path)-1]
 				if currConvoy == passConvoy {
 					army.orderComment = orderRejectConvoyNoCompletePath
-					//fmt.Println("\t It doesn't look like a legal path for this convoy exists.")
+					tracer.Println("\t It doesn't look like a legal path for this convoy exists.")
 					break
 				}
 			}
